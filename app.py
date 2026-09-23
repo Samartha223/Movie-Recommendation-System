@@ -8,13 +8,6 @@ from requests.adapters import HTTPAdapter
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-
-@st.cache_resource
-def load_similarity():
-    cv = CountVectorizer(max_features=5000, stop_words='english')
-    vectors = cv.fit_transform(movies['tags']).toarray()
-    return cosine_similarity(vectors)
-
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class SSLAdapter(HTTPAdapter):
@@ -25,17 +18,18 @@ class SSLAdapter(HTTPAdapter):
         kwargs['ssl_context'] = ctx
         return super().init_poolmanager(*args, **kwargs)
 
-# One persistent session for the whole app
-session = create_session = requests.Session()
+session = requests.Session()
 session.mount('https://', SSLAdapter())
 
-# Load data once
+# Load data
 movies_dict = pkl.load(open('movies_dict.pkl', 'rb'))
 movies = pd.DataFrame(movies_dict)
 
 @st.cache_resource
 def load_similarity():
-    return pkl.load(open('similarity.pkl', 'rb'))
+    cv = CountVectorizer(max_features=5000, stop_words='english')
+    vectors = cv.fit_transform(movies['tags']).toarray()
+    return cosine_similarity(vectors)
 
 @st.cache_data
 def fetch_poster(movie_id):
