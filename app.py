@@ -27,9 +27,22 @@ movies = pd.DataFrame(movies_dict)
 
 @st.cache_resource
 def load_similarity():
+    from sklearn.feature_extraction.text import CountVectorizer
+    from sklearn.metrics.pairwise import cosine_similarity
+    import numpy as np
+    
     cv = CountVectorizer(max_features=5000, stop_words='english')
-    vectors = cv.fit_transform(movies['tags']).toarray()
-    return cosine_similarity(vectors)
+    vectors = cv.fit_transform(movies['tags'])  # keep sparse, remove .toarray()
+    
+    # Compute in batches to avoid memory spike
+    batch_size = 500
+    n = vectors.shape[0]
+    similarity = np.zeros((n, n), dtype=np.float32)  # float32 uses half the memory
+    
+    for i in range(0, n, batch_size):
+        similarity[i:i+batch_size] = cosine_similarity(vectors[i:i+batch_size], vectors)
+    
+    return similarity
 
 @st.cache_data
 def fetch_poster(movie_id):
