@@ -5,6 +5,15 @@ import requests
 import ssl
 import urllib3
 from requests.adapters import HTTPAdapter
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+
+@st.cache_resource
+def load_similarity():
+    cv = CountVectorizer(max_features=5000, stop_words='english')
+    vectors = cv.fit_transform(movies['tags']).toarray()
+    return cosine_similarity(vectors)
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
